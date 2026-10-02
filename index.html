@@ -6,12 +6,12 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#000000">
 <title>Split</title>
-<link rel="icon" type="image/svg+xml" href="https://api.iconify.design/lucide:split.svg?color=%232f8bff">
 <link rel="manifest" href="manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Split">
+<link rel="icon" type="image/svg+xml" href="https://api.iconify.design/lucide:split.svg?color=%232f8bff">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -279,6 +279,8 @@ async function fetchGroupData(gid) {
         cents: parseFloat(e.cents),
         paidBy: e.paid_by,
         split: e.split || [],
+        from: e.type === 'p' ? e.paid_by : undefined,
+        to: e.type === 'p' && e.split ? e.split[0] : undefined,
         at: new Date(e.created_at).getTime()
       }))
     };
@@ -514,8 +516,15 @@ document.addEventListener('click', async e => {
   if (t.dataset.mon) { st.mon = Math.min(5, Math.max(0, st.mon + +t.dataset.mon)); renderProf(false); return; }
   if (t.dataset.monSet) { st.mon = +t.dataset.monSet; renderProf(false); return; }
   if (t.dataset.copy) { copy(t.dataset.copy); return; }
+  
   if (t.dataset.pay !== undefined) {
-    const s = (st._sets || [])[+t.dataset.pay]; if (!s) return; t.disabled = true;
+    const s = (st._sets || [])[+t.dataset.pay]; if (!s) return;
+    
+    // Add confirmation popup before settling
+    const G = st.g[st.gid];
+    if (!confirm(`Mark ${fmt(s.c)} as settled from ${nm(G, s.from)} to ${nm(G, s.to)}?`)) return;
+    
+    t.disabled = true;
     const paymentId = 'p_' + newCode();
     
     // Local-first update
