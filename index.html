@@ -1,23 +1,22 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-  <!-- Tells iOS to open in full screen without the Safari URL bar -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Split">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#000000">
 <title>Split</title>
 <link rel="manifest" href="manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Split">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#000;--card:#0f0f10;--chip:#1a1a1d;--ln:rgba(255,255,255,.07);--tx:#fff;--mu:#8e8e96;--ac:#2f8bff;--at:#3b9eff;--neg:#ff6b6b;--ios:cubic-bezier(.32,.72,0,1);--spr:cubic-bezier(.34,1.56,.64,1);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-html{height:100%;background:#000;color-scheme:dark;scroll-padding-top:env(safe-area-inset-top,0px)}
+html{height:100%;background:#000;color-scheme:dark;scroll-padding-top:env(safe-area-inset-top,0px);overflow:hidden}
 *,*::before,*::after{box-sizing:inherit}
-body{margin:0;height:100%;background:#000;color:#fff;font:15px/1.4 Manrope,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+body{margin:0;height:100%;background:#000;color:#fff;font:15px/1.4 Manrope,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 button:focus-visible,input:focus-visible{outline:2px solid var(--at);outline-offset:2px}
 p,h1,h3{margin:0}
@@ -127,7 +126,7 @@ h1{font-size:38px;font-weight:800;letter-spacing:-.035em;line-height:1.05}
 .sheet-open .ov{visibility:visible;transition-delay:0s}
 .scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);opacity:0;transition:opacity .5s}
 .sheet-open .scrim{opacity:1}
-.sheet{position:absolute;left:0;right:0;bottom:0;max-height:92%;overflow:auto;padding:10px 20px calc(24px + env(safe-area-inset-bottom,0px));background:rgba(28,28,30,.74);backdrop-filter:blur(40px) saturate(190%);-webkit-backdrop-filter:blur(40px) saturate(190%);border:1px solid rgba(255,255,255,.1);border-bottom:0;border-radius:30px 30px 0 0;box-shadow:0 -20px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12);transform:translateY(106%);transition:transform .6s var(--ios)}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:10px 20px calc(24px + env(safe-area-inset-bottom,0px));background:rgba(28,28,30,.88);backdrop-filter:blur(40px) saturate(190%);-webkit-backdrop-filter:blur(40px) saturate(190%);border:1px solid rgba(255,255,255,.1);border-bottom:0;border-radius:30px 30px 0 0;box-shadow:0 -20px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12);transform:translateY(106%);transition:transform .5s var(--ios)}
 .sheet-open .sheet{transform:none}
 .grab{width:40px;height:5px;border-radius:9px;background:rgba(255,255,255,.2);margin:0 auto 16px}
 .sheet h3{font-size:19px;font-weight:800}
@@ -172,7 +171,7 @@ h1{font-size:38px;font-weight:800;letter-spacing:-.035em;line-height:1.05}
 
 <script>
 /* ===== Local Setup ===== */
-const APP_URL = 'http://localhost:5173/';
+const APP_URL = 'https://amanmyst.github.io/split-app/';
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -289,13 +288,14 @@ function setTab(t,anim=true){
   document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
   renderGroup(anim?dx:undefined);
 }
-function openGroup(id){
+function openGroup(id, pushHistory = true){
   st.gid=id;st.sel=null;st.cv['gt:'+id]=0;const G=st.g[id];if(G)G.exp.forEach(e=>st.seen.add(e.id));
   setTab('exp',false);$('#gsc').scrollTop=0;$('#app').dataset.s='grp';
+  if (pushHistory) history.pushState({s:'grp', gid:id}, '');
 }
 
 /* ===== screen 3: profile ===== */
-function renderProf(){
+function renderProf(pushHistory = true){
   const now=new Date(),months=[...Array(6)].map((_,i)=>new Date(now.getFullYear(),now.getMonth()-5+i,1));
   const tots=months.map(()=>0),byG=months.map(()=>({}));
   groups().forEach(([id,G])=>G.exp.forEach(e=>{
@@ -320,11 +320,21 @@ function renderProf(){
     document.querySelectorAll('#profc .bars i').forEach(i=>i.style.height=i.dataset.h+'%');
     document.querySelectorAll('#profc .bar i').forEach(i=>i.style.width=i.dataset.w+'%');
   }));
+  if (pushHistory) history.pushState({s:'prof'}, '');
 }
-function render(){renderHub();if(st.gid)renderGroup();if($('#app').dataset.s==='prof')renderProf()}
+function render(){renderHub();if(st.gid)renderGroup();if($('#app').dataset.s==='prof')renderProf(false)}
 
-/* ===== bottom sheet ===== */
-const close=()=>document.body.classList.remove('sheet-open');
+/* ===== bottom sheet (Keyboard & History safe) ===== */
+const close = () => {
+  if (document.body.classList.contains('sheet-open')) {
+    if (history.state && history.state.sheet) {
+      history.back();
+    } else {
+      document.body.classList.remove('sheet-open');
+    }
+  }
+};
+
 function openSheet(mode,arg){
   const G=st.g[st.gid];let h='',focus='#f1';
   if(mode==='new')h=`<h3>New group</h3><p class="hint">Create a group to start tracking expenses.</p><form id="fn"><input class="fld" id="f1" maxlength="30" placeholder="Group name, e.g. Goa Trip" autocomplete="off"><input class="fld" id="f2" maxlength="30" placeholder="Place or note (optional)" autocomplete="off" style="margin-top:10px"><p class="err" id="er"></p><button class="cta press">Create group</button><button type="button" class="pill cancel press" data-a="close">Cancel</button></form>`;
@@ -341,14 +351,70 @@ function openSheet(mode,arg){
     h=`<h3>New expense</h3><form id="fx"><div class="amount"><span>₹</span><input id="xa" type="number" step="any" placeholder="0" autocomplete="off" aria-label="Amount"></div><input class="fld" id="xt" maxlength="60" placeholder="What was it for?" autocomplete="off"><div class="lb"><span>Paid by</span></div><div class="chips">${chips('radio','pb',id=>id===st.me)}</div><div class="lb"><span>Split between</span><button type="button" data-a="all">Select all</button></div><div class="chips">${chips('checkbox','sp',()=>true)}</div><p class="err" id="er"></p><button class="cta press">Add expense</button><button type="button" class="pill cancel press" data-a="close">Cancel</button></form>`;
     focus='#xa';
   }
-  $('#sb').innerHTML=h;document.body.classList.add('sheet-open');
-  if(focus)setTimeout(()=>{const f=$(focus);f&&f.focus({preventScroll:true})},450);
+  $('#sb').innerHTML=h;
+  document.body.classList.add('sheet-open');
+  history.pushState({sheet:true}, '');
+  
+  if(focus) {
+    setTimeout(()=>{
+      const f=$(focus);
+      if(f) {
+        f.focus({preventScroll:true});
+        f.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+    }, 450);
+  }
 }
+
 async function copy(id){
   const i=$('#'+id);i.focus();i.select();
   try{await navigator.clipboard.writeText(i.value);toast('Copied')}
   catch(e){toast('Press and hold to copy')}
 }
+
+/* ===== Native Back-Gesture Listener ===== */
+window.addEventListener('popstate', e => {
+  if (document.body.classList.contains('sheet-open')) {
+    document.body.classList.remove('sheet-open');
+    return;
+  }
+  const state = e.state || { s: 'hub' };
+  if (state.s === 'grp' && state.gid) {
+    openGroup(state.gid, false);
+  } else if (state.s === 'prof') {
+    renderProf(false);
+    $('#app').dataset.s = 'prof';
+  } else {
+    renderHub();
+    $('#app').dataset.s = 'hub';
+  }
+});
+
+/* ===== Mobile Keyboard Adaptor ===== */
+if (window.visualViewport) {
+  const vv = window.visualViewport;
+  const adjustViewport = () => {
+    const app = $('#app');
+    if (!app) return;
+    const diff = window.innerHeight - vv.height;
+    if (diff > 120) {
+      app.style.height = `${vv.height}px`;
+      const active = document.activeElement;
+      if (active && active.closest('.sheet')) {
+        setTimeout(() => active.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      }
+    } else {
+      app.style.height = '100%';
+    }
+  };
+  vv.addEventListener('resize', adjustViewport);
+}
+
+document.addEventListener('focusin', e => {
+  if (e.target.matches('.sheet input')) {
+    setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+  }
+});
 
 document.addEventListener('click',async e=>{
   const t=e.target.closest('button, .scrim');if(!t)return;
@@ -356,8 +422,8 @@ document.addEventListener('click',async e=>{
   if(t.dataset.g){openGroup(t.dataset.g);return}
   if(t.dataset.t){if(t.dataset.t!==st.tab)setTab(t.dataset.t);return}
   if(t.dataset.m){st.sel=st.sel===t.dataset.m?null:t.dataset.m;st.tab==='exp'?renderGroup():setTab('exp');return}
-  if(t.dataset.mon){st.mon=Math.min(5,Math.max(0,st.mon+ +t.dataset.mon));renderProf();return}
-  if(t.dataset.monSet){st.mon=+t.dataset.monSet;renderProf();return}
+  if(t.dataset.mon){st.mon=Math.min(5,Math.max(0,st.mon+ +t.dataset.mon));renderProf(false);return}
+  if(t.dataset.monSet){st.mon=+t.dataset.monSet;renderProf(false);return}
   if(t.dataset.copy){copy(t.dataset.copy);return}
   if(t.dataset.pay!==undefined){
     const s=(st._sets||[])[+t.dataset.pay];if(!s)return;t.disabled=true;
@@ -365,7 +431,13 @@ document.addEventListener('click',async e=>{
     saveDB(); render(); t.disabled=false;
     return;
   }
-  if(a==='back'){ renderHub(); $('#app').dataset.s='hub'; }
+  if(a==='back'){
+    if (history.state && (history.state.s === 'grp' || history.state.s === 'prof')) {
+      history.back();
+    } else {
+      renderHub(); $('#app').dataset.s='hub';
+    }
+  }
   else if(a==='prof'){st.mon=5;st.cv.pt=0;renderProf();$('#app').dataset.s='prof'}
   else if(a==='newg')openSheet('new');
   else if(a==='join')openSheet('join');
@@ -395,12 +467,19 @@ document.addEventListener('submit',async e=>{
     const name=$('#f1').value.trim(),sub=$('#f2').value.trim();if(!name)return er('Give the group a name.');
     const gid=newCode(),at=Date.now();
     st.g[gid] = { meta: {name, sub:sub||'New group', at, by:st.me}, mem: [{id:st.me, at}], exp: [] };
-    st.joined.unshift(gid); saveDB(); render(); close(); openGroup(gid); setTimeout(()=>openSheet('invite'), rm?0:750);
+    st.joined.unshift(gid); saveDB(); render();
+    document.body.classList.remove('sheet-open');
+    history.replaceState({s:'grp', gid}, '');
+    openGroup(gid, false);
+    setTimeout(()=>openSheet('invite'), rm?0:750);
   }else if(f.id==='fj'){
     const c=norm($('#f1').value);if(c.length!==12)return er('Codes have 12 letters and numbers.');
     if(!st.g[c]) return er('Code not found in local memory.');
     if(!st.joined.includes(c)) { st.joined.unshift(c); st.g[c].mem.push({id:st.me, at:Date.now()}); saveDB(); }
-    close(); openGroup(c); toast('You joined the group'); render();
+    document.body.classList.remove('sheet-open');
+    history.replaceState({s:'grp', gid:c}, '');
+    openGroup(c, false);
+    toast('You joined the group'); render();
   }else if(f.id==='fm'){
     const name=$('#f1').value.trim();if(!name)return er('Enter a name.');
     st.g[st.gid].mem.push({id:'g-'+newCode(), name, guest:true, at:Date.now()});
@@ -415,6 +494,7 @@ document.addEventListener('submit',async e=>{
 });
 
 /* ===== boot ===== */
+history.replaceState({s:'hub'}, '');
 renderHub();
 </script>
 </body>
