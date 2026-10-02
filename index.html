@@ -263,7 +263,7 @@ const groups=()=>st.joined.map(id=>[id,st.g[id]]).filter(([,G])=>G&&G.meta);
 async function fetchGroupData(gid) {
   if (!sb) return st.g[gid] || null;
   try {
-    const { data: grp, error: gErr } = await sb.from('groups').select('*').eq('id', gid).single();
+    const { data: grp, error: gErr } = await sb.from('groups').select('*').eq('id', gid).maybeSingle();
     if (gErr || !grp) return st.g[gid] || null;
     const { data: mems } = await sb.from('members').select('*').eq('group_id', gid);
     const { data: exps } = await sb.from('expenses').select('*').eq('group_id', gid).order('created_at', { ascending: true });
