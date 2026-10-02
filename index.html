@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="Split">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#000;--card:#0f0f10;--chip:#1a1a1d;--ln:rgba(255,255,255,.07);--tx:#fff;--mu:#8e8e96;--ac:#2f8bff;--at:#3b9eff;--neg:#ff6b6b;--ios:cubic-bezier(.32,.72,0,1);--spr:cubic-bezier(.34,1.56,.64,1);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--bg:#000;--card:#0f0f10;--chip:#1a1a1d;--ln:rgba(255,255,255,.07);--tx:#fff;--mu:#8e8e96;--ac:#2f8bff;--at:#3b9eff;--neg:#ff453a;--ios:cubic-bezier(.32,.72,0,1);--spr:cubic-bezier(.34,1.56,.64,1);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{height:100%;background:#000;color-scheme:dark;scroll-padding-top:env(safe-area-inset-top,0px);overflow:hidden}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;height:100%;background:#000;color:#fff;font:15px/1.4 Manrope,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overflow:hidden}
@@ -40,7 +40,10 @@ svg{display:block}
 h1{font-size:38px;font-weight:800;letter-spacing:-.035em;line-height:1.05}
 .mu{color:var(--mu)}.blue{color:var(--at)}.neg{color:var(--neg)}
 .card{background:var(--card);border:1px solid var(--ln);border-radius:22px}
-.back{display:inline-flex;align-items:center;gap:4px;margin:0 0 22px -4px;padding:8px 12px 8px 4px;color:var(--mu);font-weight:600}
+.nav-row{display:flex;justify-content:space-between;align-items:center;margin:0 0 22px -4px}
+.back{display:inline-flex;align-items:center;gap:4px;padding:8px 12px 8px 4px;color:var(--mu);font-weight:600}
+.icon-btn{width:40px;height:40px;border-radius:50%;background:var(--chip);display:grid;place-items:center;color:var(--mu);transition:color .2s}
+.icon-btn:hover{color:#fff}
 .ib{flex:none;width:44px;height:44px;border-radius:50%;background:var(--chip);display:grid;place-items:center;font-size:19px;color:var(--at)}
 .mid{flex:1;min-width:0}
 .t{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -49,6 +52,7 @@ h1{font-size:38px;font-weight:800;letter-spacing:-.035em;line-height:1.05}
 .pill{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:99px;background:var(--chip);padding:10px 16px;font-weight:700;font-size:14px}
 .pill.pr{background:var(--ac);box-shadow:0 0 30px rgba(47,139,255,.55)}
 .pill.cancel{background:rgba(255,255,255,.07); margin-top: 10px; width: 100%; color: #fff;}
+.pill.danger{background:rgba(255,69,58,.15); color:var(--neg); border:1px solid rgba(255,69,58,.3); margin-top:10px; width:100%}
 .cta{display:flex;justify-content:center;align-items:center;gap:8px;width:100%;margin-top:14px;padding:16px;border-radius:99px;background:var(--ac);font-weight:700;font-size:16px;box-shadow:0 0 30px rgba(47,139,255,.45)}
 .cta:disabled{opacity:.5}
 .empty{padding:28px 20px;text-align:center;color:var(--mu)}
@@ -156,21 +160,32 @@ h1{font-size:38px;font-weight:800;letter-spacing:-.035em;line-height:1.05}
 </head>
 <body>
 <div id="app" data-s="hub">
+  <!-- Screen: Hub -->
   <section class="screen" id="hub"><div class="sc"><div class="pad" id="hubc"></div></div></section>
+
+  <!-- Screen: Group -->
   <section class="screen" id="grp"><div class="sc" id="gsc"><div class="pad">
-    <button class="back press" data-a="back" aria-label="Back to Groups"></button>
+    <div class="nav-row">
+      <button class="back press" data-a="back" aria-label="Back to Groups"></button>
+      <button class="icon-btn press" data-a="grp-opts" aria-label="Group settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      </button>
+    </div>
     <div id="gh"></div>
     <div class="seg" id="seg"><i></i><button class="on" data-t="exp">Expenses</button><button data-t="bal">Balances<span id="bn"></span></button></div>
     <div id="gb"></div></div></div>
     <button class="fab press" data-a="addexp" aria-label="Add expense"></button>
   </section>
+
+  <!-- Screen: Profile -->
   <section class="screen" id="prof"><div class="sc"><div class="pad" id="profc"></div></div></section>
+
+  <!-- Bottom Sheet & Toasts -->
   <div class="ov"><div class="scrim" data-a="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sb"></div></div></div>
   <div class="toast" id="toast" role="status"></div>
 </div>
 
 <script>
-/* ===== Local Setup ===== */
 const APP_URL = 'https://amanmyst.github.io/split-app/';
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -179,20 +194,24 @@ const rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const P={users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
  right:'<path d="m9 18 6-6-6-6"/>',left:'<path d="m15 18-6-6 6-6"/>',plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
  uplus:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/>',
- arrow:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>'};
+ arrow:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+ trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+ exit:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>'};
 const ic=(n,z=20,w=2)=>`<svg width="${z}" height="${z}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
 document.querySelector('.back').innerHTML=ic('left',22)+'Groups';
 document.querySelector('.fab').innerHTML=ic('plus',26,2.5);
 
-/* ===== Local Storage Database ===== */
-const loadDB = () => JSON.parse(localStorage.getItem('splitapp_local')) || { joined: [], g: {} };
-const saveDB = () => localStorage.setItem('splitapp_local', JSON.stringify({ joined: st.joined, g: st.g }));
+/* ===== Persistent Local Store ===== */
+const loadDB = () => JSON.parse(localStorage.getItem('splitapp_local')) || { joined: [], g: {}, name: 'You' };
+const saveDB = () => localStorage.setItem('splitapp_local', JSON.stringify({ joined: st.joined, g: st.g, name: st.userName }));
 
+const initialData = loadDB();
 const st = { 
   user: 'me', me: 'me', 
-  joined: loadDB().joined, 
-  g: loadDB().g, 
-  names: {'me':'Aman'}, 
+  userName: initialData.name || 'You',
+  joined: initialData.joined, 
+  g: initialData.g, 
+  names: {'me': initialData.name || 'You'}, 
   gid: null, tab: 'exp', sel: null, mon: 5, cv: {}, seen: new Set() 
 };
 
@@ -204,9 +223,8 @@ const newCode=()=>{const a=new Uint8Array(12);crypto.getRandomValues(a);return[.
 const pretty=c=>c.toUpperCase().match(/.{1,4}/g).join('-');
 const norm=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
 const ini=s=>s.split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'?';
-const rn=(G,id)=>(G.mem.find(m=>m.id===id)||{}).name||st.names[id]||(id===st.me?'You':'Friend');
+const rn=(G,id)=>(G.mem.find(m=>m.id===id)||{}).name||st.names[id]||(id===st.me?st.userName:'Friend');
 const nm=(G,id)=>id===st.me?'You':rn(G,id);
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2800)};
 
 function cnt(el,key,to){
@@ -220,7 +238,7 @@ function cnt(el,key,to){
 const IC=[[/pizza|dinner|lunch|food|sushi|burger|restaurant|eat|brunch/i,'🍕'],[/coffee|cafe|tea/i,'☕'],[/apartment|stay|hotel|rent|airbnb|hostel|cabin/i,'⌂'],[/train|taxi|cab|flight|fuel|bus|tram|ticket|metro/i,'↗'],[/groc|market|shop/i,'🛒']];
 const ico=t=>(IC.find(([r])=>r.test(t))||[0,'🧾'])[1];
 
-/* ===== split maths ===== */
+/* ===== Split Calculations ===== */
 const shares=e=>{const ids=[...e.split].sort(),b=Math.floor(e.cents/ids.length);let r=e.cents-b*ids.length;return ids.map(i=>[i,b+(r-- >0?1:0)])};
 function netOf(G){
   const o={};G.mem.forEach(m=>o[m.id]=0);const a=(i,c)=>{o[i]=(o[i]||0)+c};
@@ -237,23 +255,22 @@ function settle(o){
 }
 const groups=()=>st.joined.map(id=>[id,st.g[id]]).filter(([,G])=>G&&G.meta);
 
-/* ===== screen 1: groups hub ===== */
+/* ===== Screen: Hub ===== */
 function renderHub(){
   const gs=groups();let owed=0;
-  const myName=st.names[st.me]||'';
   const cards=gs.map(([id,G],i)=>{
     const v = (netOf(G)[st.me]) || 0;
     owed += Math.max(0, v);
     const k=G.mem.length,tx=v>0?`<span class="blue">You are owed ${fmt(v)}</span>`:v<0?`<span style="color:#d4d4d8">You owe ${fmt(v)}</span>`:'<span class="mu">Settled up</span>';
     return `<button class="gc card press rise" style="animation-delay:${i*70}ms" data-g="${id}"><div class="r1"><span class="ib">${ic('users',20)}</span><div class="mid"><p class="t">${esc(G.meta.name)}</p><p class="s">${esc(G.meta.sub||'New group')}</p></div><span class="mu">${ic('right',20)}</span></div><div class="r2"><div class="avs"><span>${G.mem.slice(0,4).map(m=>`<span class="mini">${esc(ini(rn(G,m.id)))}</span>`).join('')}</span>${k} member${k===1?'':'s'}</div><span style="font-weight:700;font-size:14px">${tx}</span></div></button>`;
   }).join('');
-  $('#hubc').innerHTML=`<div class="top"><div><p class="kick">Your shared spaces</p><h1 style="margin-top:4px">Groups</h1></div><button class="me press" data-a="prof" aria-label="Open profile">${esc(ini(myName||'Me'))}</button></div>
+  $('#hubc').innerHTML=`<div class="top"><div><p class="kick">Your shared spaces</p><h1 style="margin-top:4px">Groups</h1></div><button class="me press" data-a="prof" aria-label="Open profile">${esc(ini(st.userName))}</button></div>
   <div class="sub"><div><p class="mu">Across ${gs.length} group${gs.length===1?'':'s'}</p><p class="big">You're owed <span class="blue" id="owed">${fmt(owed)}</span></p></div><button class="pill pr press" data-a="newg">${ic('plus',18)}Create group</button></div>`
   +(gs.length?cards+`<button class="pill press" style="margin:6px 0 0" data-a="join">Join with a code</button>`:`<div class="card empty"><p style="color:#fff;font-weight:700;font-size:17px">No groups yet</p><p style="margin:6px 0 14px">Create a new group above, or join a friend's group with their code.</p><button class="pill press" data-a="join">Join with a code</button><button class="pill press" data-a="demo">Try a demo group</button></div>`);
   if(gs.length)cnt($('#owed'),'owed',owed);
 }
 
-/* ===== screen 2: group page ===== */
+/* ===== Screen: Group ===== */
 const bumpSwap=(el,dx)=>{el.style.setProperty('--dx',dx);el.classList.remove('swap');void el.offsetWidth;el.classList.add('swap')};
 function renderGroup(swap){
   const G=st.g[st.gid];if(!G||!G.meta)return;
@@ -294,7 +311,7 @@ function openGroup(id, pushHistory = true){
   if (pushHistory) history.pushState({s:'grp', gid:id}, '');
 }
 
-/* ===== screen 3: profile ===== */
+/* ===== Screen: Profile ===== */
 function renderProf(pushHistory = true){
   const now=new Date(),months=[...Array(6)].map((_,i)=>new Date(now.getFullYear(),now.getMonth()-5+i,1));
   const tots=months.map(()=>0),byG=months.map(()=>({}));
@@ -303,11 +320,13 @@ function renderProf(pushHistory = true){
     const my=(shares(e).find(s=>s[0]===st.me)||[0,0])[1];if(!my)return;
     tots[k]+=my;byG[k][id]=(byG[k][id]||0)+my;
   }));
-  const mon=st.mon,max=Math.max(...tots,1),ml=m=>m.toLocaleDateString('en-US',{month:'short'}),name=st.names[st.me]||'You';
+  const mon=st.mon,max=Math.max(...tots,1),ml=m=>m.toLocaleDateString('en-US',{month:'short'});
   const diff=mon?tots[mon]-tots[mon-1]:0;
   const rows=Object.entries(byG[mon]).sort((a,b)=>b[1]-a[1]);
   $('#profc').innerHTML=`<button class="back press" data-a="back" aria-label="Back to Groups">${ic('left',22)}Groups</button>
-  <div class="ph"><div class="me">${esc(ini(name))}</div><div><h1 style="font-size:28px">${esc(name)}</h1><p class="mu" style="font-size:13px">Your share across all groups</p></div></div>
+  <div class="ph"><div class="me">${esc(ini(st.userName))}</div><div><h1 style="font-size:28px">${esc(st.userName)}</h1><p class="mu" style="font-size:13px">Your share across all groups</p></div></div>
+  <p class="lab">Settings</p>
+  <div class="card" style="padding:16px"><p class="s" style="margin-bottom:8px">Your display name</p><form id="fnm" class="cp"><input class="fld" id="new_name" value="${esc(st.userName)}" maxlength="25"><button class="pill pr press">Save</button></form></div>
   <p class="lab">Monthly expenses</p>
   <div class="card"><div class="mn"><button data-mon="-1" ${mon===0?'disabled':''} aria-label="Previous month">${ic('left',20)}</button><b>${months[mon].toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b><button data-mon="1" ${mon===5?'disabled':''} aria-label="Next month">${ic('right',20)}</button></div>
   <p class="mt" id="pt">${fmt(tots[mon])}</p>
@@ -324,14 +343,11 @@ function renderProf(pushHistory = true){
 }
 function render(){renderHub();if(st.gid)renderGroup();if($('#app').dataset.s==='prof')renderProf(false)}
 
-/* ===== bottom sheet (Keyboard & History safe) ===== */
+/* ===== Bottom Sheet ===== */
 const close = () => {
   if (document.body.classList.contains('sheet-open')) {
-    if (history.state && history.state.sheet) {
-      history.back();
-    } else {
-      document.body.classList.remove('sheet-open');
-    }
+    if (history.state && history.state.sheet) history.back();
+    else document.body.classList.remove('sheet-open');
   }
 };
 
@@ -340,10 +356,9 @@ function openSheet(mode,arg){
   if(mode==='new')h=`<h3>New group</h3><p class="hint">Create a group to start tracking expenses.</p><form id="fn"><input class="fld" id="f1" maxlength="30" placeholder="Group name, e.g. Goa Trip" autocomplete="off"><input class="fld" id="f2" maxlength="30" placeholder="Place or note (optional)" autocomplete="off" style="margin-top:10px"><p class="err" id="er"></p><button class="cta press">Create group</button><button type="button" class="pill cancel press" data-a="close">Cancel</button></form>`;
   if(mode==='join')h=`<h3>Join a group</h3><p class="hint">Enter the code from your friend's invite.</p><form id="fj"><input class="fld mono" id="f1" maxlength="20" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" value="${esc(arg||'')}"><p class="err" id="er"></p><button class="cta press">Join group</button><button type="button" class="pill cancel press" data-a="close">Cancel</button></form>`;
   if(mode==='invite'){
-    const link=APP_URL+'#join='+st.gid;
     h=`<h3>Invite to ${esc(G.meta.name)}</h3><p class="hint">Share this code with your friends.</p>
     <div class="lb"><span>Group code</span></div><div class="cp"><input class="fld mono" id="cd" readonly value="${pretty(st.gid)}" aria-label="Group code"><button class="pill press" data-copy="cd">Copy</button></div>
-    <div class="lb"><span>Add them locally by name</span></div><form id="fm" class="cp"><input class="fld" id="f1" maxlength="24" placeholder="Friend's name" autocomplete="off"><button class="pill pr press">Add</button></form><p class="err" id="er"></p><button type="button" class="pill cancel press" data-a="close">Close</button>`;
+    <div class="lb"><span>Add friend to split list</span></div><form id="fm" class="cp"><input class="fld" id="f1" maxlength="24" placeholder="Friend's name" autocomplete="off"><button class="pill pr press">Add</button></form><p class="err" id="er"></p><button type="button" class="pill cancel press" data-a="close">Close</button>`;
     focus=null;
   }
   if(mode==='exp'){
@@ -351,19 +366,17 @@ function openSheet(mode,arg){
     h=`<h3>New expense</h3><form id="fx"><div class="amount"><span>₹</span><input id="xa" type="number" step="any" placeholder="0" autocomplete="off" aria-label="Amount"></div><input class="fld" id="xt" maxlength="60" placeholder="What was it for?" autocomplete="off"><div class="lb"><span>Paid by</span></div><div class="chips">${chips('radio','pb',id=>id===st.me)}</div><div class="lb"><span>Split between</span><button type="button" data-a="all">Select all</button></div><div class="chips">${chips('checkbox','sp',()=>true)}</div><p class="err" id="er"></p><button class="cta press">Add expense</button><button type="button" class="pill cancel press" data-a="close">Cancel</button></form>`;
     focus='#xa';
   }
+  if(mode==='opts'){
+    h=`<h3>Group Settings</h3><p class="hint">${esc(G.meta.name)}</p>
+    <button class="pill press" data-a="leave-grp" style="width:100%;margin-top:6px">${ic('exit',18)} Leave group</button>
+    <button class="pill danger press" data-a="del-grp">${ic('trash',18)} Delete group for everyone</button>
+    <button type="button" class="pill cancel press" data-a="close">Cancel</button>`;
+    focus=null;
+  }
   $('#sb').innerHTML=h;
   document.body.classList.add('sheet-open');
   history.pushState({sheet:true}, '');
-  
-  if(focus) {
-    setTimeout(()=>{
-      const f=$(focus);
-      if(f) {
-        f.focus({preventScroll:true});
-        f.scrollIntoView({behavior:'smooth', block:'center'});
-      }
-    }, 450);
-  }
+  if(focus) setTimeout(()=>{const f=$(focus);if(f){f.focus({preventScroll:true});f.scrollIntoView({behavior:'smooth',block:'center'})}},450);
 }
 
 async function copy(id){
@@ -379,121 +392,140 @@ window.addEventListener('popstate', e => {
     return;
   }
   const state = e.state || { s: 'hub' };
-  if (state.s === 'grp' && state.gid) {
-    openGroup(state.gid, false);
-  } else if (state.s === 'prof') {
-    renderProf(false);
-    $('#app').dataset.s = 'prof';
-  } else {
-    renderHub();
-    $('#app').dataset.s = 'hub';
-  }
+  if (state.s === 'grp' && state.gid) openGroup(state.gid, false);
+  else if (state.s === 'prof') { renderProf(false); $('#app').dataset.s = 'prof'; }
+  else { renderHub(); $('#app').dataset.s = 'hub'; }
 });
 
 /* ===== Mobile Keyboard Adaptor ===== */
 if (window.visualViewport) {
   const vv = window.visualViewport;
-  const adjustViewport = () => {
-    const app = $('#app');
-    if (!app) return;
+  vv.addEventListener('resize', () => {
+    const app = $('#app');if (!app) return;
     const diff = window.innerHeight - vv.height;
     if (diff > 120) {
       app.style.height = `${vv.height}px`;
       const active = document.activeElement;
-      if (active && active.closest('.sheet')) {
-        setTimeout(() => active.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-      }
+      if (active && active.closest('.sheet')) setTimeout(() => active.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     } else {
       app.style.height = '100%';
     }
-  };
-  vv.addEventListener('resize', adjustViewport);
+  });
 }
 
-document.addEventListener('focusin', e => {
-  if (e.target.matches('.sheet input')) {
-    setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
-  }
-});
+/* ===== Leave & Delete Group Actions ===== */
+function leaveCurrentGroup() {
+  const gid = st.gid;
+  st.joined = st.joined.filter(id => id !== gid);
+  saveDB();
+  close();
+  renderHub();
+  $('#app').dataset.s = 'hub';
+  toast('You left the group');
+}
 
-document.addEventListener('click',async e=>{
-  const t=e.target.closest('button, .scrim');if(!t)return;
-  const a=t.dataset.a;
-  if(t.dataset.g){openGroup(t.dataset.g);return}
-  if(t.dataset.t){if(t.dataset.t!==st.tab)setTab(t.dataset.t);return}
-  if(t.dataset.m){st.sel=st.sel===t.dataset.m?null:t.dataset.m;st.tab==='exp'?renderGroup():setTab('exp');return}
-  if(t.dataset.mon){st.mon=Math.min(5,Math.max(0,st.mon+ +t.dataset.mon));renderProf(false);return}
-  if(t.dataset.monSet){st.mon=+t.dataset.monSet;renderProf(false);return}
-  if(t.dataset.copy){copy(t.dataset.copy);return}
-  if(t.dataset.pay!==undefined){
-    const s=(st._sets||[])[+t.dataset.pay];if(!s)return;t.disabled=true;
-    st.g[st.gid].exp.push({id:newCode(), type:'p',from:s.from,to:s.to,cents:s.c,at:Date.now(),by:st.me});
-    saveDB(); render(); t.disabled=false;
+function deleteCurrentGroup() {
+  if (!confirm('Are you sure you want to permanently delete this group and all its expenses?')) return;
+  const gid = st.gid;
+  delete st.g[gid];
+  st.joined = st.joined.filter(id => id !== gid);
+  saveDB();
+  close();
+  renderHub();
+  $('#app').dataset.s = 'hub';
+  toast('Group deleted');
+}
+
+/* ===== Click Listeners ===== */
+document.addEventListener('click', async e => {
+  const t = e.target.closest('button, .scrim'); if (!t) return;
+  const a = t.dataset.a;
+  if (t.dataset.g) { openGroup(t.dataset.g); return; }
+  if (t.dataset.t) { if (t.dataset.t !== st.tab) setTab(t.dataset.t); return; }
+  if (t.dataset.m) { st.sel = st.sel === t.dataset.m ? null : t.dataset.m; st.tab === 'exp' ? renderGroup() : setTab('exp'); return; }
+  if (t.dataset.mon) { st.mon = Math.min(5, Math.max(0, st.mon + +t.dataset.mon)); renderProf(false); return; }
+  if (t.dataset.monSet) { st.mon = +t.dataset.monSet; renderProf(false); return; }
+  if (t.dataset.copy) { copy(t.dataset.copy); return; }
+  if (t.dataset.pay !== undefined) {
+    const s = (st._sets || [])[+t.dataset.pay]; if (!s) return; t.disabled = true;
+    st.g[st.gid].exp.push({ id: newCode(), type: 'p', from: s.from, to: s.to, cents: s.c, at: Date.now(), by: st.me });
+    saveDB(); render(); t.disabled = false;
     return;
   }
-  if(a==='back'){
-    if (history.state && (history.state.s === 'grp' || history.state.s === 'prof')) {
-      history.back();
-    } else {
-      renderHub(); $('#app').dataset.s='hub';
-    }
+  if (a === 'back') {
+    if (history.state && (history.state.s === 'grp' || history.state.s === 'prof')) history.back();
+    else { renderHub(); $('#app').dataset.s = 'hub'; }
   }
-  else if(a==='prof'){st.mon=5;st.cv.pt=0;renderProf();$('#app').dataset.s='prof'}
-  else if(a==='newg')openSheet('new');
-  else if(a==='join')openSheet('join');
-  else if(a==='invite')openSheet('invite');
-  else if(a==='addexp')openSheet('exp');
-  else if(a==='close')close();
-  else if(a==='clr'){st.sel=null;renderGroup()}
-  else if(a==='all')document.querySelectorAll('input[name=sp]').forEach(c=>c.checked=true);
-  else if(a==='demo'){
-    t.disabled=true;
-    const gid=newCode(),at=Date.now(),day=864e5,all=[st.me,'g-aman','g-maya','g-leo'];
-    const x=(title,inr,by,off)=>({id:newCode(), type:'e',title,cents:inr,paidBy:by,split:all,at:at-off*day-5000});
+  else if (a === 'prof') { st.mon = 5; st.cv.pt = 0; renderProf(); $('#app').dataset.s = 'prof'; }
+  else if (a === 'grp-opts') openSheet('opts');
+  else if (a === 'leave-grp') leaveCurrentGroup();
+  else if (a === 'del-grp') deleteCurrentGroup();
+  else if (a === 'newg') openSheet('new');
+  else if (a === 'join') openSheet('join');
+  else if (a === 'invite') openSheet('invite');
+  else if (a === 'addexp') openSheet('exp');
+  else if (a === 'close') close();
+  else if (a === 'clr') { st.sel = null; renderGroup(); }
+  else if (a === 'all') document.querySelectorAll('input[name=sp]').forEach(c => c.checked = true);
+  else if (a === 'demo') {
+    t.disabled = true;
+    const gid = newCode(), at = Date.now(), day = 864e5, all = [st.me, 'g-aman', 'g-maya', 'g-leo'];
+    const x = (title, inr, by, off) => ({ id: newCode(), type: 'e', title, cents: inr, paidBy: by, split: all, at: at - off * day - 5000 });
     st.g[gid] = {
-      meta: {name:'Weekend Trip',sub:'Goa · Weekend',at,by:st.me},
-      mem: [{id:st.me, at}, {id:'g-aman', name:'Priya', guest:true, at:at+1}, {id:'g-maya', name:'Maya', guest:true, at:at+2}, {id:'g-leo', name:'Leo', guest:true, at:at+3}],
-      exp: [x('Pizza night',4500,'g-aman',0),x('Hotel',14000,st.me,1),x('Train tickets',6800,'g-maya',1),x('Coffee',1200,'g-leo',2)]
+      meta: { name: 'Weekend Trip', sub: 'Goa · Weekend', at, by: st.me },
+      mem: [{ id: st.me, at }, { id: 'g-aman', name: 'Priya', guest: true, at: at + 1 }, { id: 'g-maya', name: 'Maya', guest: true, at: at + 2 }, { id: 'g-leo', name: 'Leo', guest: true, at: at + 3 }],
+      exp: [x('Pizza night', 4500, 'g-aman', 0), x('Hotel', 14000, st.me, 1), x('Train tickets', 6800, 'g-maya', 1), x('Coffee', 1200, 'g-leo', 2)]
     };
     st.joined.unshift(gid); saveDB(); render();
   }
 });
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
-document.addEventListener('submit',async e=>{
-  e.preventDefault();const f=e.target,b=f.querySelector('.cta,.pill'),er=m=>{const x=$('#er');if(x)x.textContent=m};
-  
-  if(f.id==='fn'){
-    const name=$('#f1').value.trim(),sub=$('#f2').value.trim();if(!name)return er('Give the group a name.');
-    const gid=newCode(),at=Date.now();
-    st.g[gid] = { meta: {name, sub:sub||'New group', at, by:st.me}, mem: [{id:st.me, at}], exp: [] };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+document.addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, er = m => { const x = $('#er'); if (x) x.textContent = m; };
+
+  if (f.id === 'fnm') {
+    const val = $('#new_name').value.trim();
+    if (val) {
+      st.userName = val;
+      st.names[st.me] = val;
+      saveDB();
+      render();
+      toast('Name updated');
+    }
+  } else if (f.id === 'fn') {
+    const name = $('#f1').value.trim(), sub = $('#f2').value.trim(); if (!name) return er('Give the group a name.');
+    const gid = newCode(), at = Date.now();
+    st.g[gid] = { meta: { name, sub: sub || 'New group', at, by: st.me }, mem: [{ id: st.me, at }], exp: [] };
     st.joined.unshift(gid); saveDB(); render();
     document.body.classList.remove('sheet-open');
-    history.replaceState({s:'grp', gid}, '');
+    history.replaceState({ s: 'grp', gid }, '');
     openGroup(gid, false);
-    setTimeout(()=>openSheet('invite'), rm?0:750);
-  }else if(f.id==='fj'){
-    const c=norm($('#f1').value);if(c.length!==12)return er('Codes have 12 letters and numbers.');
-    if(!st.g[c]) return er('Code not found in local memory.');
-    if(!st.joined.includes(c)) { st.joined.unshift(c); st.g[c].mem.push({id:st.me, at:Date.now()}); saveDB(); }
+    setTimeout(() => openSheet('invite'), rm ? 0 : 750);
+  } else if (f.id === 'fj') {
+    const c = norm($('#f1').value); if (c.length !== 12) return er('Codes have 12 letters and numbers.');
+    if (!st.g[c]) return er('Code not found in local memory.');
+    if (!st.joined.includes(c)) { st.joined.unshift(c); st.g[c].mem.push({ id: st.me, at: Date.now() }); saveDB(); }
     document.body.classList.remove('sheet-open');
-    history.replaceState({s:'grp', gid:c}, '');
+    history.replaceState({ s: 'grp', gid: c }, '');
     openGroup(c, false);
     toast('You joined the group'); render();
-  }else if(f.id==='fm'){
-    const name=$('#f1').value.trim();if(!name)return er('Enter a name.');
-    st.g[st.gid].mem.push({id:'g-'+newCode(), name, guest:true, at:Date.now()});
-    saveDB(); renderGroup(); $('#f1').value=''; toast(name+' added');
-  }else if(f.id==='fx'){
-    const amount=parseFloat($('#xa').value),title=$('#xt').value.trim()||'Expense';
-    const pb=f.querySelector('input[name=pb]:checked'),split=[...f.querySelectorAll('input[name=sp]:checked')].map(c=>c.value);
-    if(!(amount>0))return er('Enter an amount above 0.');if(!pb)return er('Choose who paid.');if(!split.length)return er('Pick at least one person to split with.');
-    st.g[st.gid].exp.push({id:newCode(), type:'e',title,cents:amount,paidBy:pb.value,split,at:Date.now(),by:st.me});
-    saveDB(); close(); st.sel=null; setTab('exp',false); $('#gsc').scrollTo({top:0,behavior:rm?'auto':'smooth'}); render();
+  } else if (f.id === 'fm') {
+    const name = $('#f1').value.trim(); if (!name) return er('Enter a name.');
+    st.g[st.gid].mem.push({ id: 'g-' + newCode(), name, guest: true, at: Date.now() });
+    saveDB(); renderGroup(); $('#f1').value = ''; toast(name + ' added');
+  } else if (f.id === 'fx') {
+    const amount = parseFloat($('#xa').value), title = $('#xt').value.trim() || 'Expense';
+    const pb = f.querySelector('input[name=pb]:checked'), split = [...f.querySelectorAll('input[name=sp]:checked')].map(c => c.value);
+    if (!(amount > 0)) return er('Enter an amount above 0.'); if (!pb) return er('Choose who paid.'); if (!split.length) return er('Pick at least one person to split with.');
+    st.g[st.gid].exp.push({ id: newCode(), type: 'e', title, cents: amount, paidBy: pb.value, split, at: Date.now(), by: st.me });
+    saveDB(); close(); st.sel = null; setTab('exp', false); $('#gsc').scrollTo({ top: 0, behavior: rm ? 'auto' : 'smooth' }); render();
   }
 });
 
-/* ===== boot ===== */
+/* ===== Boot ===== */
 history.replaceState({s:'hub'}, '');
 renderHub();
 </script>
