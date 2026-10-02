@@ -359,8 +359,8 @@ function renderGroup(swap){
     gb.innerHTML=`<div class="rowh"><b>Recent activity</b>${cl}</div>`+(list.length?`<div class="card">${list.map(e=>{
       const fresh=Date.now()-e.at<6000&&!st.seen.has(e.id);
       return e.type==='p'
-        ?`<div class="ar ${fresh?'enter':''}"><span class="ib" style="color:#34d399">✓</span><div class="mid"><p class="t">${esc(nm(G,e.from))} paid${esc(nm(G,e.to))}</p><p class="s">Settled up · ${fd(e.at)}</p></div><span class="am" style="color:#34d399">${fmt(e.cents)}</span></div>`
-        :`<div class="ar ${fresh?'enter':''}"><span class="ib">${ico(e.title)}</span><div class="mid"><p class="t">${esc(e.title)}</p><p class="s">${esc(nm(G,e.paidBy))} paid · ${fd(e.at)} ·${e.split.length} involved</p></div><span class="am">${fmt(e.cents)}</span></div>`}).join('')}</div>`:`<div class="card empty">${st.sel?'Nothing paid by them yet.':'No expenses yet.<br>Tap + to add the first one.'}</div>`);
+        ?`<div class="ar ${fresh?'enter':''}"><span class="ib" style="color:#34d399">✓</span><div class="mid"><p class="t">${esc(nm(G,e.from))}&nbsp;paid&nbsp;${esc(nm(G,e.to))}</p><p class="s">Settled up · ${fd(e.at)}</p></div><span class="am" style="color:#34d399">${fmt(e.cents)}</span></div>`
+        :`<div class="ar ${fresh?'enter':''}"><span class="ib">${ico(e.title)}</span><div class="mid"><p class="t">${esc(e.title)}</p><p class="s">${esc(nm(G,e.paidBy))}&nbsp;paid · ${fd(e.at)} ·${e.split.length} involved</p></div><span class="am">${fmt(e.cents)}</span></div>`}).join('')}</div>`:`<div class="card empty">${st.sel?'Nothing paid by them yet.':'No expenses yet.<br>Tap + to add the first one.'}</div>`);
   }else{
     const max=Math.max(1,...sets.map(s=>s.c));
     gb.innerHTML=`<div class="rowh"><b>Who owes whom</b><span>Minimum transfers</span></div>`+(sets.length?sets.map((s,i)=>`<div class="bc card"><span class="av">${esc(ini(rn(G,s.from)))}</span><div class="mid"><p class="t"><b>${esc(nm(G,s.from))}</b> ${s.from===st.me?'owe':'owes'} <b>${esc(nm(G,s.to))}</b></p><div class="bar"><i data-w="${s.c/max*100}"></i></div></div><div class="r"><span class="am blue">${fmt(s.c)}</span><button class="mini-pill" data-pay="${i}">Settle ${ic('arrow',14)}</button></div></div>`).join(''):'<div class="card empty">Everyone is settled up.</div>');
@@ -386,7 +386,7 @@ function renderProf(pushHistory = true){
   const now=new Date(),months=[...Array(6)].map((_,i)=>new Date(now.getFullYear(),now.getMonth()-5+i,1));
   const tots=months.map(()=>0),byG=months.map(()=>({}));
   groups().forEach(([id,G])=>G.exp.forEach(e=>{
-    if(e.type!=='e')return;const d=new Date(e.at),k=months.findIndex(m=>m.getFullYear()===d.getFullYear()&&m.getMonth()===d.getMonth());if(k<0)return;
+    if(e.type!=='e')return;const d=new Date(e.at),k=months.findIndex(m=>m.getFullYear()&&m.getMonth()===d.getMonth());if(k<0)return;
     const my=(shares(e).find(s=>s[0]===st.me)||[0,0])[1];if(!my)return;
     tots[k]+=my;byG[k][id]=(byG[k][id]||0)+my;
   }));
@@ -520,7 +520,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.pay !== undefined) {
     const s = (st._sets || [])[+t.dataset.pay]; if (!s) return;
     
-    // Confirmation dialog before recording settlement
+    // Confirmation popup before settling
     const G = st.g[st.gid];
     if (!confirm(`Mark ${fmt(s.c)} as settled from ${nm(G, s.from)} to ${nm(G, s.to)}?`)) return;
     
@@ -588,7 +588,6 @@ document.addEventListener('submit', async e => {
     if (!name) return er('Give the group a name.');
     const gid = newCode(), at = Date.now();
 
-    // Local-first group initialization
     st.g[gid] = {
       meta: { name, sub: sub || 'New group', at },
       mem: [{ id: st.me, name: st.userName, guest: false }],
