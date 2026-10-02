@@ -12,6 +12,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Split">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#000;--card:#0f0f10;--chip:#1a1a1d;--ln:rgba(255,255,255,.07);--tx:#fff;--mu:#8e8e96;--ac:#2f8bff;--at:#3b9eff;--neg:#ff453a;--ios:cubic-bezier(.32,.72,0,1);--spr:cubic-bezier(.34,1.56,.64,1);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{height:100%;background:#000;color-scheme:dark;scroll-padding-top:env(safe-area-inset-top,0px);overflow:hidden}
@@ -132,7 +134,7 @@ h1{font-size:38px;font-weight:800;letter-spacing:-.035em;line-height:1.05}
 .sheet-open .scrim{opacity:1}
 .sheet{position:absolute;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:10px 20px calc(24px + env(safe-area-inset-bottom,0px));background:rgba(28,28,30,.88);backdrop-filter:blur(40px) saturate(190%);-webkit-backdrop-filter:blur(40px) saturate(190%);border:1px solid rgba(255,255,255,.1);border-bottom:0;border-radius:30px 30px 0 0;box-shadow:0 -20px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12);transform:translateY(106%);transition:transform .5s var(--ios)}
 .sheet-open .sheet{transform:none}
-.grab{width:40px;height:5px;border-radius:9px;background:rgba(255,255,255,.2);margin:0 auto 16px}
+.grab{width:40px;height:5px;border-radius:99px;background:rgba(255,255,255,.2);margin:0 auto 16px}
 .sheet h3{font-size:19px;font-weight:800}
 .hint{color:var(--mu);font-size:13.5px;margin:4px 0 14px}
 .fld{width:100%;background:rgba(255,255,255,.07);border:1px solid transparent;border-radius:16px;padding:14px 16px;color:#fff;font:inherit;font-size:16px;outline:0;transition:border-color .25s}
@@ -160,10 +162,7 @@ h1{font-size:38px;font-weight:800;letter-spacing:-.035em;line-height:1.05}
 </head>
 <body>
 <div id="app" data-s="hub">
-  <!-- Screen: Hub -->
   <section class="screen" id="hub"><div class="sc"><div class="pad" id="hubc"></div></div></section>
-
-  <!-- Screen: Group -->
   <section class="screen" id="grp"><div class="sc" id="gsc"><div class="pad">
     <div class="nav-row">
       <button class="back press" data-a="back" aria-label="Back to Groups"></button>
@@ -176,17 +175,17 @@ h1{font-size:38px;font-weight:800;letter-spacing:-.035em;line-height:1.05}
     <div id="gb"></div></div></div>
     <button class="fab press" data-a="addexp" aria-label="Add expense"></button>
   </section>
-
-  <!-- Screen: Profile -->
   <section class="screen" id="prof"><div class="sc"><div class="pad" id="profc"></div></div></section>
-
-  <!-- Bottom Sheet & Toasts -->
   <div class="ov"><div class="scrim" data-a="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sb"></div></div></div>
   <div class="toast" id="toast" role="status"></div>
 </div>
 
 <script>
-const APP_URL = 'https://amanmyst.github.io/split-app/';
+/* ===== Supabase Setup ===== */
+const SUPABASE_URL = 'https://eebqdrlrfqywgcfwvube.supabase.co';
+const SUPABASE_ANON_KEY = 'PASTE_YOUR_COPIED_ANON_KEY_HERE';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -201,25 +200,27 @@ const ic=(n,z=20,w=2)=>`<svg width="${z}" height="${z}" viewBox="0 0 24 24" fill
 document.querySelector('.back').innerHTML=ic('left',22)+'Groups';
 document.querySelector('.fab').innerHTML=ic('plus',26,2.5);
 
-/* ===== Persistent Local Store ===== */
-const loadDB = () => JSON.parse(localStorage.getItem('splitapp_local')) || { joined: [], g: {}, name: 'You' };
-const saveDB = () => localStorage.setItem('splitapp_local', JSON.stringify({ joined: st.joined, g: st.g, name: st.userName }));
+/* ===== Local Storage & Identity ===== */
+const loadLocal = () => JSON.parse(localStorage.getItem('splitapp_local')) || { joined: [], name: 'You', myId: null };
+const saveLocal = () => localStorage.setItem('splitapp_local', JSON.stringify({ joined: st.joined, name: st.userName, myId: st.me }));
 
-const initialData = loadDB();
-const st = { 
-  user: 'me', me: 'me', 
-  userName: initialData.name || 'You',
-  joined: initialData.joined, 
-  g: initialData.g, 
-  names: {'me': initialData.name || 'You'}, 
-  gid: null, tab: 'exp', sel: null, mon: 5, cv: {}, seen: new Set() 
-};
-
-/* ===== Formatting (Rupees) ===== */
-const fmt=c=>'₹'+(Math.abs(c)).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
-const fd=t=>new Date(t).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+const localStore = loadLocal();
 const AL='abcdefghjkmnpqrstuvwxyz23456789';
 const newCode=()=>{const a=new Uint8Array(12);crypto.getRandomValues(a);return[...a].map(x=>AL[x%AL.length]).join('')};
+
+const st = { 
+  me: localStore.myId || 'u_' + newCode().slice(0,8),
+  userName: localStore.name || 'You',
+  joined: localStore.joined || [], 
+  g: {}, 
+  names: {}, 
+  gid: null, tab: 'exp', sel: null, mon: 5, cv: {}, seen: new Set() 
+};
+saveLocal();
+
+/* ===== Currency & Formatting ===== */
+const fmt=c=>'₹'+(Math.abs(c)).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fd=t=>new Date(t).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 const pretty=c=>c.toUpperCase().match(/.{1,4}/g).join('-');
 const norm=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
 const ini=s=>s.split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'?';
@@ -255,6 +256,67 @@ function settle(o){
 }
 const groups=()=>st.joined.map(id=>[id,st.g[id]]).filter(([,G])=>G&&G.meta);
 
+/* ===== Sync Engine (Supabase) ===== */
+async function fetchGroupData(gid) {
+  try {
+    const { data: grp } = await sb.from('groups').select('*').eq('id', gid).single();
+    if (!grp) return null;
+    const { data: mems } = await sb.from('members').select('*').eq('group_id', gid);
+    const { data: exps } = await sb.from('expenses').select('*').eq('group_id', gid).order('created_at', { ascending: true });
+
+    st.g[gid] = {
+      meta: { name: grp.name, sub: grp.sub, at: new Date(grp.created_at).getTime() },
+      mem: (mems || []).map(m => ({ id: m.id, name: m.name, guest: m.is_guest })),
+      exp: (exps || []).map(e => ({
+        id: e.id,
+        type: e.type,
+        title: e.title,
+        cents: parseFloat(e.cents),
+        paidBy: e.paid_by,
+        split: e.split || [],
+        at: new Date(e.created_at).getTime()
+      }))
+    };
+    (mems || []).forEach(m => { st.names[m.id] = m.name; });
+    return st.g[gid];
+  } catch(e) {
+    console.error('Fetch error:', e);
+    return null;
+  }
+}
+
+async function syncAll() {
+  for (const gid of st.joined) await fetchGroupData(gid);
+  render();
+}
+
+function listenRealtime() {
+  sb.channel('realtime-all')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, async payload => {
+      const gid = payload.new?.group_id || payload.old?.group_id;
+      if (gid && st.joined.includes(gid)) { await fetchGroupData(gid); render(); }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, async payload => {
+      const gid = payload.new?.group_id || payload.old?.group_id;
+      if (gid && st.joined.includes(gid)) { await fetchGroupData(gid); render(); }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'groups' }, async payload => {
+      const gid = payload.new?.id || payload.old?.id;
+      if (gid && st.joined.includes(gid)) {
+        if (payload.eventType === 'DELETE') {
+          st.joined = st.joined.filter(id => id !== gid);
+          delete st.g[gid];
+          saveLocal();
+          if (st.gid === gid) { $('#app').dataset.s = 'hub'; }
+        } else {
+          await fetchGroupData(gid);
+        }
+        render();
+      }
+    })
+    .subscribe();
+}
+
 /* ===== Screen: Hub ===== */
 function renderHub(){
   const gs=groups();let owed=0;
@@ -266,7 +328,7 @@ function renderHub(){
   }).join('');
   $('#hubc').innerHTML=`<div class="top"><div><p class="kick">Your shared spaces</p><h1 style="margin-top:4px">Groups</h1></div><button class="me press" data-a="prof" aria-label="Open profile">${esc(ini(st.userName))}</button></div>
   <div class="sub"><div><p class="mu">Across ${gs.length} group${gs.length===1?'':'s'}</p><p class="big">You're owed <span class="blue" id="owed">${fmt(owed)}</span></p></div><button class="pill pr press" data-a="newg">${ic('plus',18)}Create group</button></div>`
-  +(gs.length?cards+`<button class="pill press" style="margin:6px 0 0" data-a="join">Join with a code</button>`:`<div class="card empty"><p style="color:#fff;font-weight:700;font-size:17px">No groups yet</p><p style="margin:6px 0 14px">Create a new group above, or join a friend's group with their code.</p><button class="pill press" data-a="join">Join with a code</button><button class="pill press" data-a="demo">Try a demo group</button></div>`);
+  +(gs.length?cards+`<button class="pill press" style="margin:6px 0 0" data-a="join">Join with a code</button>`:`<div class="card empty"><p style="color:#fff;font-weight:700;font-size:17px">No groups yet</p><p style="margin:6px 0 14px">Create a new group above, or join a friend's group with their code.</p><button class="pill press" data-a="join">Join with a code</button></div>`);
   if(gs.length)cnt($('#owed'),'owed',owed);
 }
 
@@ -354,9 +416,9 @@ const close = () => {
 function openSheet(mode,arg){
   const G=st.g[st.gid];let h='',focus='#f1';
   if(mode==='new')h=`<h3>New group</h3><p class="hint">Create a group to start tracking expenses.</p><form id="fn"><input class="fld" id="f1" maxlength="30" placeholder="Group name, e.g. Goa Trip" autocomplete="off"><input class="fld" id="f2" maxlength="30" placeholder="Place or note (optional)" autocomplete="off" style="margin-top:10px"><p class="err" id="er"></p><button class="cta press">Create group</button><button type="button" class="pill cancel press" data-a="close">Cancel</button></form>`;
-  if(mode==='join')h=`<h3>Join a group</h3><p class="hint">Enter the code from your friend's invite.</p><form id="fj"><input class="fld mono" id="f1" maxlength="20" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" value="${esc(arg||'')}"><p class="err" id="er"></p><button class="cta press">Join group</button><button type="button" class="pill cancel press" data-a="close">Cancel</button></form>`;
+  if(mode==='join')h=`<h3>Join a group</h3><p class="hint">Enter the 12-letter code from your friend's invite.</p><form id="fj"><input class="fld mono" id="f1" maxlength="20" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" value="${esc(arg||'')}"><p class="err" id="er"></p><button class="cta press">Join group</button><button type="button" class="pill cancel press" data-a="close">Cancel</button></form>`;
   if(mode==='invite'){
-    h=`<h3>Invite to ${esc(G.meta.name)}</h3><p class="hint">Share this code with your friends.</p>
+    h=`<h3>Invite to ${esc(G.meta.name)}</h3><p class="hint">Share this code with your friends to let them join.</p>
     <div class="lb"><span>Group code</span></div><div class="cp"><input class="fld mono" id="cd" readonly value="${pretty(st.gid)}" aria-label="Group code"><button class="pill press" data-copy="cd">Copy</button></div>
     <div class="lb"><span>Add friend to split list</span></div><form id="fm" class="cp"><input class="fld" id="f1" maxlength="24" placeholder="Friend's name" autocomplete="off"><button class="pill pr press">Add</button></form><p class="err" id="er"></p><button type="button" class="pill cancel press" data-a="close">Close</button>`;
     focus=null;
@@ -385,7 +447,7 @@ async function copy(id){
   catch(e){toast('Press and hold to copy')}
 }
 
-/* ===== Native Back-Gesture Listener ===== */
+/* ===== Viewport & Back Gestures ===== */
 window.addEventListener('popstate', e => {
   if (document.body.classList.contains('sheet-open')) {
     document.body.classList.remove('sheet-open');
@@ -397,7 +459,6 @@ window.addEventListener('popstate', e => {
   else { renderHub(); $('#app').dataset.s = 'hub'; }
 });
 
-/* ===== Mobile Keyboard Adaptor ===== */
 if (window.visualViewport) {
   const vv = window.visualViewport;
   vv.addEventListener('resize', () => {
@@ -413,30 +474,31 @@ if (window.visualViewport) {
   });
 }
 
-/* ===== Leave & Delete Group Actions ===== */
-function leaveCurrentGroup() {
+/* ===== Group Management Actions ===== */
+async function leaveCurrentGroup() {
   const gid = st.gid;
   st.joined = st.joined.filter(id => id !== gid);
-  saveDB();
+  saveLocal();
   close();
   renderHub();
   $('#app').dataset.s = 'hub';
   toast('You left the group');
 }
 
-function deleteCurrentGroup() {
-  if (!confirm('Are you sure you want to permanently delete this group and all its expenses?')) return;
+async function deleteCurrentGroup() {
+  if (!confirm('Are you sure you want to permanently delete this group and its expenses from the cloud for everyone?')) return;
   const gid = st.gid;
-  delete st.g[gid];
+  await sb.from('groups').delete().eq('id', gid);
   st.joined = st.joined.filter(id => id !== gid);
-  saveDB();
+  delete st.g[gid];
+  saveLocal();
   close();
   renderHub();
   $('#app').dataset.s = 'hub';
   toast('Group deleted');
 }
 
-/* ===== Click Listeners ===== */
+/* ===== Click & Form Handlers ===== */
 document.addEventListener('click', async e => {
   const t = e.target.closest('button, .scrim'); if (!t) return;
   const a = t.dataset.a;
@@ -448,8 +510,19 @@ document.addEventListener('click', async e => {
   if (t.dataset.copy) { copy(t.dataset.copy); return; }
   if (t.dataset.pay !== undefined) {
     const s = (st._sets || [])[+t.dataset.pay]; if (!s) return; t.disabled = true;
-    st.g[st.gid].exp.push({ id: newCode(), type: 'p', from: s.from, to: s.to, cents: s.c, at: Date.now(), by: st.me });
-    saveDB(); render(); t.disabled = false;
+    const paymentId = 'p_' + newCode();
+    await sb.from('expenses').insert({
+      id: paymentId,
+      group_id: st.gid,
+      type: 'p',
+      title: 'Settlement',
+      cents: s.c,
+      paid_by: s.from,
+      split: [s.to]
+    });
+    await fetchGroupData(st.gid);
+    render();
+    t.disabled = false;
     return;
   }
   if (a === 'back') {
@@ -467,17 +540,6 @@ document.addEventListener('click', async e => {
   else if (a === 'close') close();
   else if (a === 'clr') { st.sel = null; renderGroup(); }
   else if (a === 'all') document.querySelectorAll('input[name=sp]').forEach(c => c.checked = true);
-  else if (a === 'demo') {
-    t.disabled = true;
-    const gid = newCode(), at = Date.now(), day = 864e5, all = [st.me, 'g-aman', 'g-maya', 'g-leo'];
-    const x = (title, inr, by, off) => ({ id: newCode(), type: 'e', title, cents: inr, paidBy: by, split: all, at: at - off * day - 5000 });
-    st.g[gid] = {
-      meta: { name: 'Weekend Trip', sub: 'Goa · Weekend', at, by: st.me },
-      mem: [{ id: st.me, at }, { id: 'g-aman', name: 'Priya', guest: true, at: at + 1 }, { id: 'g-maya', name: 'Maya', guest: true, at: at + 2 }, { id: 'g-leo', name: 'Leo', guest: true, at: at + 3 }],
-      exp: [x('Pizza night', 4500, 'g-aman', 0), x('Hotel', 14000, st.me, 1), x('Train tickets', 6800, 'g-maya', 1), x('Coffee', 1200, 'g-leo', 2)]
-    };
-    st.joined.unshift(gid); saveDB(); render();
-  }
 });
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
@@ -491,43 +553,80 @@ document.addEventListener('submit', async e => {
     if (val) {
       st.userName = val;
       st.names[st.me] = val;
-      saveDB();
+      saveLocal();
+      await sb.from('members').update({ name: val }).eq('id', st.me);
       render();
       toast('Name updated');
     }
   } else if (f.id === 'fn') {
     const name = $('#f1').value.trim(), sub = $('#f2').value.trim(); if (!name) return er('Give the group a name.');
-    const gid = newCode(), at = Date.now();
-    st.g[gid] = { meta: { name, sub: sub || 'New group', at, by: st.me }, mem: [{ id: st.me, at }], exp: [] };
-    st.joined.unshift(gid); saveDB(); render();
+    const gid = newCode();
+    await sb.from('groups').insert({ id: gid, name, sub: sub || 'New group' });
+    await sb.from('members').insert({ id: st.me, group_id: gid, name: st.userName });
+    
+    st.joined.unshift(gid);
+    saveLocal();
+    await fetchGroupData(gid);
+    render();
     document.body.classList.remove('sheet-open');
     history.replaceState({ s: 'grp', gid }, '');
     openGroup(gid, false);
     setTimeout(() => openSheet('invite'), rm ? 0 : 750);
   } else if (f.id === 'fj') {
     const c = norm($('#f1').value); if (c.length !== 12) return er('Codes have 12 letters and numbers.');
-    if (!st.g[c]) return er('Code not found in local memory.');
-    if (!st.joined.includes(c)) { st.joined.unshift(c); st.g[c].mem.push({ id: st.me, at: Date.now() }); saveDB(); }
+    const grp = await fetchGroupData(c);
+    if (!grp) return er('Group not found in the cloud.');
+    
+    // Add current user as member if not yet in group
+    const exists = grp.mem.some(m => m.id === st.me);
+    if (!exists) {
+      await sb.from('members').insert({ id: st.me, group_id: c, name: st.userName });
+      await fetchGroupData(c);
+    }
+    if (!st.joined.includes(c)) {
+      st.joined.unshift(c);
+      saveLocal();
+    }
     document.body.classList.remove('sheet-open');
     history.replaceState({ s: 'grp', gid: c }, '');
     openGroup(c, false);
     toast('You joined the group'); render();
   } else if (f.id === 'fm') {
     const name = $('#f1').value.trim(); if (!name) return er('Enter a name.');
-    st.g[st.gid].mem.push({ id: 'g-' + newCode(), name, guest: true, at: Date.now() });
-    saveDB(); renderGroup(); $('#f1').value = ''; toast(name + ' added');
+    const memId = 'g_' + newCode().slice(0,8);
+    await sb.from('members').insert({ id: memId, group_id: st.gid, name, is_guest: true });
+    await fetchGroupData(st.gid);
+    renderGroup();
+    $('#f1').value = '';
+    toast(name + ' added');
   } else if (f.id === 'fx') {
     const amount = parseFloat($('#xa').value), title = $('#xt').value.trim() || 'Expense';
     const pb = f.querySelector('input[name=pb]:checked'), split = [...f.querySelectorAll('input[name=sp]:checked')].map(c => c.value);
     if (!(amount > 0)) return er('Enter an amount above 0.'); if (!pb) return er('Choose who paid.'); if (!split.length) return er('Pick at least one person to split with.');
-    st.g[st.gid].exp.push({ id: newCode(), type: 'e', title, cents: amount, paidBy: pb.value, split, at: Date.now(), by: st.me });
-    saveDB(); close(); st.sel = null; setTab('exp', false); $('#gsc').scrollTo({ top: 0, behavior: rm ? 'auto' : 'smooth' }); render();
+    
+    await sb.from('expenses').insert({
+      id: 'e_' + newCode(),
+      group_id: st.gid,
+      type: 'e',
+      title,
+      cents: amount,
+      paid_by: pb.value,
+      split
+    });
+    await fetchGroupData(st.gid);
+    close();
+    st.sel = null;
+    setTab('exp', false);
+    $('#gsc').scrollTo({ top: 0, behavior: rm ? 'auto' : 'smooth' });
+    render();
   }
 });
 
-/* ===== Boot ===== */
+/* ===== Initialize ===== */
 history.replaceState({s:'hub'}, '');
 renderHub();
+syncAll();
+listenRealtime();
 </script>
 </body>
 </html>
