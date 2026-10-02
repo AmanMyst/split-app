@@ -520,7 +520,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.pay !== undefined) {
     const s = (st._sets || [])[+t.dataset.pay]; if (!s) return;
     
-    // Add confirmation popup before settling
+    // Confirmation dialog before recording settlement
     const G = st.g[st.gid];
     if (!confirm(`Mark ${fmt(s.c)} as settled from ${nm(G, s.from)} to ${nm(G, s.to)}?`)) return;
     
@@ -588,7 +588,7 @@ document.addEventListener('submit', async e => {
     if (!name) return er('Give the group a name.');
     const gid = newCode(), at = Date.now();
 
-    // 1. Immediately create local state (Local-First, so screen is never blank)
+    // Local-first group initialization
     st.g[gid] = {
       meta: { name, sub: sub || 'New group', at },
       mem: [{ id: st.me, name: st.userName, guest: false }],
@@ -598,13 +598,11 @@ document.addEventListener('submit', async e => {
     if (!st.joined.includes(gid)) st.joined.unshift(gid);
     saveLocal();
 
-    // 2. Open group page immediately
     document.body.classList.remove('sheet-open');
     history.replaceState({ s: 'grp', gid }, '');
     openGroup(gid, false);
     setTimeout(() => openSheet('invite'), rm ? 0 : 750);
 
-    // 3. Sync to Supabase in the background
     if (sb) {
       try {
         const { error: gErr } = await sb.from('groups').insert({ id: gid, name, sub: sub || 'New group' });
